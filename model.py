@@ -17,7 +17,7 @@ class Session:
         self.last_active = datetime.now()
 
 class SessionManager:
-    def __init__(self, session_timeout=30):  # timeout in minutes
+    def __init__(self, session_timeout=60):  # timeout in minutes
         self.sessions = {}
         self.session_timeout = timedelta(minutes=session_timeout)
 
