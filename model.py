@@ -88,7 +88,9 @@ def load_conversation_data(phone_number, uid):
             user_name = result[0][2]
             
             # Convert the JSON string from database to a Python list
-            conversation_history = json.loads(history_json) if history_json else []
+            full_conversation_history = json.loads(history_json) if history_json else []
+            conversation_history = full_conversation_history[-5:] if len(full_conversation_history) > 5 else full_conversation_history
+
             
             return {
                 "conversation_history": conversation_history,
@@ -370,7 +372,7 @@ def handle_referral(data_dict, phone_number, uid):
 def check_existing_application(phone_number):
     """Check if user already has an application with modifications"""
     try:
-        query = """SELECT id FROM candidate_details 
+        query = """SELECT user_id FROM candidate_details 
                   WHERE mobile_number = %s 
                   AND modified IS NOT NULL"""
         result = execute_query(query, (phone_number,), fetch=True)
@@ -387,19 +389,29 @@ def handle_milestone_1(response, phone_number, uid):
         data = load_conversation_data(phone_number, uid)
         conversation_history = data["conversation_history"]
         
+        
         # Check if user already has an application
         if check_existing_application(phone_number):
-            message = "You already have an existing application with this contact number in our system. Do you want to overwrite that application?\n(Please type 'YES' or 'NO')"
+            message = "An existing application found with this contact number in our system. We are overriding your application with this new info."
+            
+            extracted_data = extract_json_data(response)
+            query = f"""UPDATE candidates SET username = '{extracted_data['username']}', current_location = '{extracted_data['current_location']}' WHERE mobile_number = '{phone_number}'; """
+            
+            id = execute_query(query)
+            query1 = f"""UPDATE candidate_details SET username = '{extracted_data['username']}', current_location = '{extracted_data['current_location']}', work_experience = '{extracted_data['work_experience']}', current_salary = '{extracted_data['current_salary']}', current_company = '{extracted_data['company_name']}', destination = '{extracted_data['designation']}' WHERE mobile_number = '{phone_number}'; """
+            
+            current_id = execute_query(query1)
+            print("New application ID:", current_id)
             
             conversation_history.append({
                 "role": "assistant",
-                "content": message
+                "content": "Milestone - 1 completed. Do you want to proceed next milestone?"
             })
             
-            # Save updated conversation history
-            save_conversation_data(phone_number, uid, conversation_history)
+            # Save updated conversation history with current_id
+            save_conversation_data(phone_number, uid, conversation_history, current_id, data["user_name"])
             
-            print("conversation_history in milestone 1",conversation_history)
+            message = "An existing application found with this contact number in our system. We are overriding your application with this new info.\nYour information saved successfully.\nPart 1 of 4 completed🎉.\nPlease type 'Y' or 'YES' to proceed with part 2."
             return message
             
         else:
@@ -567,11 +579,11 @@ def handle_message(user_question, phone_number, resume_link, custom_prompt, uid)
         logging.error(f"Message handling error: {e}")
         return DEFAULT_ERROR_MESSAGE
 
-# For testing:
-if __name__ == "__main__":
-    while True:
-        user = input("Enter: ")
-        if user == "exit":
-            break
-        else: 
-            print(handle_message(user, "917304847881", "", "", "test_uid"))
+# # For testing:
+# if __name__ == "__main__":
+#     while True:
+#         user = input("Enter: ")
+#         if user == "exit":
+#             break
+#         else: 
+#             print(handle_message(user, "917304847881", "", "", "test_uid"))
