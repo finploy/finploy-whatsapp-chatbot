@@ -90,7 +90,6 @@ def load_conversation_data(phone_number, uid):
             # Convert the JSON string from database to a Python list
             full_conversation_history = json.loads(history_json) if history_json else []
             conversation_history = full_conversation_history[-5:] if len(full_conversation_history) > 5 else full_conversation_history
-
             
             return {
                 "conversation_history": conversation_history,
@@ -205,15 +204,10 @@ def handle_milestone_2(response, phone_number, uid):
         data = load_conversation_data(phone_number, uid)
         current_id = data["current_id"]
         conversation_history = data["conversation_history"]
-        
-        if not current_id:
-            return "Error: Application ID not found. Please restart the application process."
-            
-        print("ID get in milestone 2 : ", current_id)
-        
+
         extracted_data = extract_json_data(response)
 
-        query =  f"""UPDATE candidate_details SET employed = '{extracted_data['employed_or_not']}', gender = '{extracted_data['gender']}', sales_experience = '{extracted_data['bank_experience']}' WHERE id = {current_id} ; """
+        query =  f"""UPDATE candidate_details SET employed = '{extracted_data['employed_or_not']}', gender = '{extracted_data['gender']}', sales_experience = '{extracted_data['bank_experience']}' WHERE mobile_number = '{phone_number}' ; """
         execute_query(query)
         
         conversation_history.append({
@@ -238,10 +232,6 @@ def handle_milestone_3(response, phone_number, uid):
         current_id = data["current_id"]
         conversation_history = data["conversation_history"]
         
-        if not current_id:
-            return "Error: Application ID not found. Please restart the application process."
-            
-        print("current id in milestone 3 : ", current_id)
         
         extracted_data = extract_json_data(response)
         query =  f"""UPDATE candidate_details SET 
@@ -259,7 +249,7 @@ def handle_milestone_3(response, phone_number, uid):
                     Legal_compliance_Risk = '{extracted_data['Legal/compliance/Risk']}', 
                     Operations = '{extracted_data['Operations']}', 
                     Others1 = '{extracted_data['Others1']}' 
-                    WHERE id = {current_id} ; """
+                    WHERE mobile_number = '{phone_number}' ; """
         
         execute_query(query)
         
@@ -411,7 +401,7 @@ def handle_milestone_1(response, phone_number, uid):
             # Save updated conversation history with current_id
             save_conversation_data(phone_number, uid, conversation_history, current_id, data["user_name"])
             
-            message = "An existing application found with this contact number in our system. We are overriding your application with this new info.\nYour information saved successfully.\nPart 1 of 4 completed🎉.\nPlease type 'Y' or 'YES' to proceed with part 2."
+            message = "Your information saved successfully.\nPart 1 of 4 completed🎉.\nPlease type 'Y' or 'YES' to proceed with part 2."
             return message
             
         else:
@@ -534,18 +524,16 @@ def handle_message(user_question, phone_number, resume_link, custom_prompt, uid)
         
         # Handle resume upload
         if resume_link:
-            if current_id:
-                query = """UPDATE candidate_details SET 
-                    resume = %s, modified = %s 
-                    WHERE id = %s"""
-                values = (resume_link, datetime.now(), current_id)
-                execute_query(query, values)
-                
-                # # Clear conversation history after complete application
-                # clear_conversation_data(phone_number, uid)
-                return "Your application saved successfully.\nPart 4 of 4 completed🎉."
-            else:
-                return "Unable to save resume. Application ID not found."
+            query = """UPDATE candidate_details SET 
+                resume = %s, modified = %s 
+                WHERE mobile_number = %s"""
+            values = (resume_link, datetime.now(), phone_number)
+            execute_query(query, values)
+            
+            # # Clear conversation history after complete application
+            # clear_conversation_data(phone_number, uid)
+            return "Your application saved successfully.\nPart 4 of 4 completed🎉."
+
             
         # Handle different response types
         if "```milestone_1" in response_content:
