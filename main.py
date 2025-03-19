@@ -2,7 +2,7 @@ from flask import Flask, request, render_template
 from pprint import pprint
 from reply import reply_to_msg
 # from test import handle_message
-from test1 import handle_message
+from model import handle_message
 import json
 import os
 
