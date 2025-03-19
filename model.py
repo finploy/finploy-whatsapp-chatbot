@@ -308,11 +308,12 @@ def handle_referral(data_dict, phone_number, uid):
         conversation_history = data["conversation_history"]
         
         # Check if associate exists
-        query = """SELECT associate_id FROM associate WHERE mobile_number = %s"""
+        query = """SELECT associate_id, username FROM associate WHERE mobile_number = %s"""
         associate_result = execute_query(query, (phone_number,), fetch=True)
         
         if associate_result:
             associate_id = associate_result[0][0]
+            associate_name = associate_result[0][1]
         else:
             # Create new associate
             query = """INSERT INTO associate (username, mobile_number, unique_link, created) 
@@ -339,7 +340,7 @@ def handle_referral(data_dict, phone_number, uid):
                 data_dict["candidate_mobile_number"],
                 data_dict["candidate_current_location"],
                 associate_id,
-                data_dict["user_Name"],
+                associate_name,
                 phone_number,
                 "", "", "", "", "",
                 datetime.now()
@@ -406,44 +407,78 @@ def handle_milestone_1(response, phone_number, uid):
             
         else:
             extracted_data = extract_json_data(response)
+            query0 = """SELECT user_id, associate_id, associate_name, associate_mobile FROM candidates WHERE mobile_number = %s"""
+            values0 = (phone_number,)
+            result= execute_query(query0, values0, fetch=True)
+            if result:
+                user_id = result[0][0]
+                associate_id = result[0][1]
+                associate_name = result[0][2]
+                associate_mobile = result[0][3]
 
-            query = """INSERT INTO candidates(username, mobile_number, current_location, associate_id, associate_name, associate_mobile, unique_link, status, jobrole, companyname, location, salary, created)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
-            values = (
-                extracted_data['username'], 
-                phone_number,  # Add phone number to the initial save
-                extracted_data['current_location'],
-                1, "harsh", "8104748399", "", "PENDING", "", "", "", "", datetime.now()
-            )
-            id = execute_query(query, values)
-            query1 = """INSERT INTO candidate_details 
+                query_1 = """INSERT INTO candidate_details 
                 (user_id, username, mobile_number, current_location, work_experience, 
-                current_salary, current_company, destination) 
-                VALUES (%s,%s, %s, %s, %s, %s, %s, %s)"""
-            values1 = (
-                id,
-                extracted_data['username'], 
-                phone_number,  # Add phone number to the initial save
-                extracted_data['current_location'],
-                extracted_data['work_experience'], 
-                extracted_data['current_salary'],
-                extracted_data['company_name'], 
-                extracted_data['designation']
-            )
-            
-            current_id = execute_query(query1, values1)
-            print("New application ID:", current_id)
-            
-            conversation_history.append({
-                "role": "assistant",
-                "content": "Milestone - 1 completed. Do you want to proceed next milestone?"
-            })
-            
-            # Save updated conversation history with current_id
-            save_conversation_data(phone_number, uid, conversation_history, current_id, data["user_name"])
-            
-            message = "Your information saved successfully.\nPart 1 of 4 completed🎉.\nPlease type 'Y' or 'YES' to proceed with part 2."
-            return message
+                current_salary, current_company, destination, associate_id, associate_name, associate_mobile) 
+                VALUES (%s,%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+                values_1 = (
+                    user_id,
+                    extracted_data['username'], 
+                    phone_number,  # Add phone number to the initial save
+                    extracted_data['current_location'],
+                    extracted_data['work_experience'], 
+                    extracted_data['current_salary'],
+                    extracted_data['company_name'], 
+                    extracted_data['designation'],
+                    associate_id, associate_name, associate_mobile
+                )
+                id = execute_query(query_1, values_1)
+                conversation_history.append({
+                    "role": "assistant",
+                    "content": "Milestone - 1 completed. Do you want to proceed next milestone?"
+                })
+                
+                # Save updated conversation history with current_id
+                save_conversation_data(phone_number, uid, conversation_history, id, data["user_name"])
+                
+                message = "Your information saved successfully.\nPart 1 of 4 completed🎉.\nPlease type 'Y' or 'YES' to proceed with part 2."
+                return message
+            else:
+                query = """INSERT INTO candidates(username, mobile_number, current_location, associate_id, associate_name, associate_mobile, unique_link, status, jobrole, companyname, location, salary, created)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
+                values = (
+                    extracted_data['username'], 
+                    phone_number,  # Add phone number to the initial save
+                    extracted_data['current_location'],
+                    1, "harsh", "8104748399", "", "PENDING", "", "", "", "", datetime.now()
+                )
+                id = execute_query(query, values)
+                query1 = """INSERT INTO candidate_details 
+                    (user_id, username, mobile_number, current_location, work_experience, 
+                    current_salary, current_company, destination) 
+                    VALUES (%s,%s, %s, %s, %s, %s, %s, %s)"""
+                values1 = (
+                    id,
+                    extracted_data['username'], 
+                    phone_number,  # Add phone number to the initial save
+                    extracted_data['current_location'],
+                    extracted_data['work_experience'], 
+                    extracted_data['current_salary'],
+                    extracted_data['company_name'], 
+                    extracted_data['designation']
+                )
+                
+                current_id = execute_query(query1, values1)
+                
+                conversation_history.append({
+                    "role": "assistant",
+                    "content": "Milestone - 1 completed. Do you want to proceed next milestone?"
+                })
+                
+                # Save updated conversation history with current_id
+                save_conversation_data(phone_number, uid, conversation_history, current_id, data["user_name"])
+                
+                message = "Your information saved successfully.\nPart 1 of 4 completed🎉.\nPlease type 'Y' or 'YES' to proceed with part 2."
+                return message
     except Exception as e:
         logging.error(f"Milestone 1 error: {e}")
         return DEFAULT_ERROR_MESSAGE
