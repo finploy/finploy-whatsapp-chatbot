@@ -1,11 +1,13 @@
 from flask import Flask, request, render_template
 from pprint import pprint
 from reply import reply_to_msg
-from model import handle_message
+# from test import handle_message
+from test1 import handle_message
 import json
 import os
 
 app = Flask(__name__)
+# app.secret_key = secrets.token_hex(16)
 
 PROMPT_FILE = 'custom_prompt.json'
 
@@ -45,18 +47,19 @@ def webhook():
         phone_number = req.get('contact', {}).get('phone_number')
         is_new_msg = req.get('message', {}).get('is_new_message')
         message_body = req.get('message', {}).get('body', '')
+        uid = req.get('contact', {}).get('uid')
         resume_link = ""
         if req.get('message',{}).get('media','') and type(req.get('message',{}).get('media','')) != list:
             resume_link = req.get('message',{}).get('media','').get('link', '')
             print(resume_link)
-            message_body = "process_my_form"
+            message_body = "Ok"
         
         if not all([phone_number, is_new_msg, message_body]):
             return ""  # Return empty if required fields are missing
         
         if is_new_msg:
             # Process message and get response using the current custom prompt
-            openai_response = handle_message(user_question=message_body, resume_link= resume_link, phone_number= phone_number,custom_prompt= custom_prompt)
+            openai_response = handle_message(user_question=message_body, resume_link= resume_link, phone_number= phone_number,custom_prompt= custom_prompt, uid = uid)
             
             # Send response back via WhatsApp
             reply_to_msg(phone_number, openai_response)
