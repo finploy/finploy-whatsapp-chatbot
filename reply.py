@@ -1,8 +1,13 @@
 import requests
 from pprint import pprint 
+from dotenv import load_dotenv
+load_dotenv()
+import os
 
-url = "https://watifly.in/api/533a7c8a-7e5c-4638-8221-1f609ac88eb0/contact/send-message"
+vendor_id = os.getenv("VENDOR_ID")
+access_token = os.getenv("ACCESS_TOKEN")
 
+url = f"https://watifly.in/api/{vendor_id}/contact/send-message"
 
 
 def reply_to_msg(phone_number:str, message:str):
@@ -10,7 +15,7 @@ def reply_to_msg(phone_number:str, message:str):
         "phone_number": phone_number,
         "message_body": message
     }
-    headers = {"Authorization": "Bearer XccoFLdKUib8bjeL5vLQgEzOneW0w5mW58gyaiX2bL9hF7jN8Q6yPY9w2gVxwINB"}
+    headers = {"Authorization": f"Bearer {access_token}"}
 
     response = requests.request("POST", url, json=payload, headers=headers)
 
