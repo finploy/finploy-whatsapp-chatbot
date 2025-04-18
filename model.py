@@ -347,7 +347,7 @@ def handle_referral(data_dict, phone_number, uid):
             )
             
             execute_query(query, values)
-            output = "Thank you for the referral! I've registered the candidate successfully. 🤝"
+            output = "Thank you for the referral! I've registered the candidate successfully. 🤝. \n\nType D - Know status of your referred candidate \nType A - Apply Job \nType B - Search Job."
         
         # Update conversation history
         conversation_history.append({"role": "assistant", "content": output})
@@ -520,7 +520,7 @@ def handle_referral_milestone_1(response, phone_number, uid):
         # Save updated conversation history with user_name
         save_conversation_data(phone_number, uid, conversation_history, data["current_id"], user_name)
         
-        return "Your information saved successfully.\nMilestone - 1 completed 🎉.\n\nWould like to proceed to MILESTONE 2 ?"
+        return "Your information saved successfully.\nPart 1 of 2 completed🎉.\n\nPlease type 'Y' or 'YES' to proceed with part 2?"
         
     except Exception as e:
         logging.error(f"Referral milestone 1 error: {e}")
@@ -567,7 +567,7 @@ def handle_message(user_question, phone_number, resume_link, custom_prompt, uid)
             
             # # Clear conversation history after complete application
             # clear_conversation_data(phone_number, uid)
-            return "Your application saved successfully.\nPart 4 of 4 completed🎉."
+            return "Thank you. Your application saved successfully.\nPart 4 of 4 completed🎉.We will get back to you soon if your profile fits the job opening \n\nType B - Search Job \nType C - Refer Candidate & Earn 20% Payout"
 
             
         # Handle different response types
